@@ -13,7 +13,7 @@
 #' app$setValue(name, value, iotype = c("auto", "input", "output"))
 #' app$sendKeys(name = NULL, keys)
 #'
-#' app$get_windows_size()
+#' app$getWindowSize()
 #' app$setWindowSize(width, height)
 #'
 #' app$getUrl()
@@ -87,6 +87,9 @@
 #'   \item{timeout}{Timeout for the condition, in milliseconds.}
 #'   \item{output}{Character vector, the name(s) of the Shiny output
 #'     widgets that should be updated.}
+#'   \item{allowInputNoBinding_}{When setting the value of an input, allow
+#'     it to set the value of an input even if that input does not have
+#'     an input binding.}
 #'   \item{...}{For \code{expectUpdate} these can be named arguments.
 #'     The argument names correspond to Shiny input widgets: each input
 #'     widget will be set to the specified value.}
@@ -120,7 +123,7 @@
 #' uploaded to a file input with that name.
 #'
 #' \code{app$getAllValues()} returns a named list of all inputs, outputs,
-#' and error values.
+#' and export values.
 #'
 #' \code{app$setValue()} finds a widget and sets its value. See the
 #' \code{setValue} method of the \code{\link{Widget}} class.
@@ -307,9 +310,11 @@ ShinyDriver <- R6Class(
       sd_expectUpdate(self, private, output, ..., timeout = timeout,
                        iotype = match.arg(iotype)),
 
-    setInputs = function(..., wait_ = TRUE, values_ = TRUE, timeout_ = 3000) {
+    setInputs = function(..., wait_ = TRUE, values_ = TRUE, timeout_ = 3000,
+      allowInputNoBinding_ = FALSE, priority_ = c("input", "event")) {
       sd_setInputs(self, private, ..., wait_ = wait_, values_ = values_,
-                    timeout_ = timeout_)
+                   timeout_ = timeout_, allowInputNoBinding_ = allowInputNoBinding_,
+                   priority_ = priority_)
     },
 
     uploadFile = function(..., wait_ = TRUE, values_ = TRUE, timeout_ = 3000)

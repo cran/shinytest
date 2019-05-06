@@ -19,7 +19,7 @@ app$getValue(name, iotype = c("auto", "input", "output"))
 app$setValue(name, value, iotype = c("auto", "input", "output"))
 app$sendKeys(name = NULL, keys)
 
-app$get_windows_size()
+app$getWindowSize()
 app$setWindowSize(width, height)
 
 app$getUrl()
@@ -95,6 +95,9 @@ app$expectUpdate(output, ..., timeout = 3000,
   \item{timeout}{Timeout for the condition, in milliseconds.}
   \item{output}{Character vector, the name(s) of the Shiny output
     widgets that should be updated.}
+  \item{allowInputNoBinding_}{When setting the value of an input, allow
+    it to set the value of an input even if that input does not have
+    an input binding.}
   \item{...}{For \code{expectUpdate} these can be named arguments.
     The argument names correspond to Shiny input widgets: each input
     widget will be set to the specified value.}
@@ -130,7 +133,7 @@ be named and the value must be the path to a local file; that file will be
 uploaded to a file input with that name.
 
 \code{app$getAllValues()} returns a named list of all inputs, outputs,
-and error values.
+and export values.
 
 \code{app$setValue()} finds a widget and sets its value. See the
 \code{setValue} method of the \code{\link{Widget}} class.
