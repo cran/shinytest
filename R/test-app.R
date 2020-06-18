@@ -13,7 +13,9 @@
 #' @param interactive If there are any differences between current results and
 #'   expected results, provide an interactive graphical viewer that shows the
 #'   changes and allows the user to accept or reject the changes.
-#'
+#' @param suffix An optional suffix for the expected results directory. For
+#'   example, if the suffix is \code{"mac"}, the expected directory would be
+#'   \code{mytest-expected-mac}.
 #'
 #' @seealso \code{\link{snapshotCompare}} and \code{\link{snapshotUpdate}} if
 #'   you want to compare or update snapshots after testing. In most cases, the
@@ -21,8 +23,14 @@
 #'   where it is useful to call these functions from the console.
 #'
 #' @export
-testApp <- function(appDir = ".", testnames = NULL, quiet = FALSE,
-  compareImages = TRUE, interactive = base::interactive())
+testApp <- function(
+  appDir = ".",
+  testnames = NULL,
+  quiet = FALSE,
+  compareImages = TRUE,
+  interactive = base::interactive(),
+  suffix = NULL
+)
 {
   library(shinytest)
 
@@ -39,27 +47,9 @@ testApp <- function(appDir = ".", testnames = NULL, quiet = FALSE,
     appDir       <- appDir
   }
 
-  testsDir <- file.path(appDir, "tests")
-
-  found_testnames <- list.files(testsDir, pattern = "\\.[r|R]$")
+  testsDir <- findTestsDir(appDir, quiet=FALSE)
+  found_testnames <- findTests(testsDir, testnames)
   found_testnames_no_ext <- sub("\\.[rR]$", "", found_testnames)
-  if (!is.null(testnames)) {
-    # Strip .R extension from supplied filenames
-    testnames_no_ext <- sub("\\.[rR]$", "", testnames)
-
-    # Keep only specified files
-    idx <- match(testnames_no_ext, found_testnames_no_ext)
-
-    if (any(is.na(idx))) {
-      stop("Test scripts do not exist: ",
-        paste0(testnames[is.na(idx)], collapse =", ")
-      )
-    }
-
-    # Keep only specified files
-    found_testnames <- found_testnames[idx]
-    found_testnames_no_ext <- found_testnames_no_ext[idx]
-  }
 
   if (length(found_testnames) == 0) {
     stop("No test scripts found in ", testsDir)
@@ -94,13 +84,135 @@ testApp <- function(appDir = ".", testnames = NULL, quiet = FALSE,
 
   # Compare all results
   return(
-    snapshotCompare(appDir, testnames = found_testnames_no_ext, quiet = quiet,
-      images = compareImages, interactive = interactive)
+    snapshotCompare(
+      appDir,
+      testnames = found_testnames_no_ext,
+      quiet = quiet,
+      images = compareImages,
+      interactive = interactive,
+      suffix = suffix
+    )
   )
 }
 
+#' Identify in which directory the tests are contained.
+#'
+#' Prior to 1.3.1.9999, tests were stored directly in `tests/` rather than
+#' nested in `tests/shinytest/`.
+#'
+#' @param mustExist If TRUE, will error if we can't find a test directory.
+#' @param quiet If we see that the tests are stored in the top-level tests/ directory as we used to
+#'   recommend, we will note the new recommendation in a message to the user if this is FALSE.
+#'
+#' This function does the following:
+#'  1. Check to see if `tests/shinytest/` exists. If so, use it.
+#'  2. Check to see if all the top-level R files in `tests/` appear to be shinytest. If
+#'     some are and some aren't, throw an error.
+#'  3. Assuming all top-level R files in `tests/` appear to be shinytest, return that dir.
+#' @noRd
+findTestsDir <- function(appDir, mustExist=TRUE, quiet=TRUE) {
+  if (basename(appDir) == "tests"){
+    # We were given a */tests/ directory. It's possible that we're in the middle of a nested tests
+    # directory and the application dir is actually one level up. This happens in certain versions
+    # of the RStudio IDE.
+    # https://github.com/rstudio/rstudio/issues/5677
 
-all_testnames <- function(appDir, suffixes = c("-expected", "-current")) {
+    if (!dir_exists(file.path(appDir, "tests"))){
+      # We're in a dir called `tests` and there's not another `tests` directory inside, so we can
+      # assume that the app dir is actually probably one level up.
+      appDir <- dirname(appDir)
+    }
+  }
+
+  testsDir <- file.path(appDir, "tests")
+  if (!dir_exists(testsDir) && mustExist) {
+    stop("tests/ directory doesn't exist")
+  } else if (!dir_exists(testsDir) && !mustExist) {
+    # Use the preferred directory if nothing exists yet.
+    return(file.path(testsDir, "shinytest"))
+  }
+
+  r_files <- list.files(testsDir, pattern = "\\.[rR]$", full.names = TRUE)
+  is_test <- vapply(r_files, function(f) {
+    isShinyTest(readLines(f, warn=FALSE))
+  }, logical(1))
+
+  if (dir_exists(file.path(testsDir, "shinytests"))) {
+    message(
+      "tests/shinytests/ directory found.",
+      " Please rename this directory to tests/shinytest/.",
+      " (The tests/shinytests/ directory was used only in an unreleased version of the shinytest package.)"
+    )
+  }
+
+  shinytestDir <- file.path(testsDir, "shinytest")
+  if (dir_exists(shinytestDir)) {
+    # We'll want to use this dir. But as a courtesy, let's warn if we find anything
+    # that appears to be a shinytest in the top-level; it's possible that someone
+    # using the old layout (tests at the top-level) might have just had a directory
+    # named shinytest. Let's leave them a clue.
+    if (any(is_test) && !quiet) {
+      warning("Assuming that the shinytests are stored in tests/shinytest, but it appears that there are some ",
+              "shinytests in the top-level tests/ directory. All shinytests should be placed in the tests/shinytest/ directory.")
+    }
+
+    return(shinytestDir)
+  }
+
+  if (!any(is_test) && !mustExist){
+    # There may be some stuff in the tests directory, but if it's not shinytest-related...
+    # Ignore and just use the nested dir
+    return(shinytestDir)
+  }
+
+  if (!all(is_test)) {
+    stop("Found R files that don't appear to be shinytests in the tests/ directory. shinytests should be placed in tests/shinytest/")
+  }
+
+  if (!quiet) {
+    message(
+      "Shinytest scripts found in tests/.\n",
+      "As of shinytest 1.4.0, shinytests should be placed in the tests/shinytest/ directory.\n",
+      "Please use migrateShinytestDir(), or see ?migrateShinytestDir for more information."
+    )
+  }
+  testsDir
+}
+
+#' Check to see if the given text is a shinytest
+#' Scans for the magic string of `app <- ShinyDriver$new(` as an indicator that this is a shinytest.
+#' @noRd
+isShinyTest <- function(text) {
+  lines <- grepl("app\\s*<-\\s*ShinyDriver\\$new\\(", text, perl=TRUE)
+  any(lines)
+}
+
+#' Finds the relevant tests in a given directory
+#' @noRd
+findTests <- function(testsDir, testnames=NULL) {
+  found_testnames <- list.files(testsDir, pattern = "\\.[rR]$")
+  found_testnames_no_ext <- sub("\\.[rR]$", "", found_testnames)
+
+  if (!is.null(testnames)) {
+    testnames_no_ext <- sub("\\.[rR]$", "", testnames)
+
+    # Keep only specified files
+    idx <- match(testnames_no_ext, found_testnames_no_ext)
+
+    if (any(is.na(idx))) {
+      stop("Test scripts do not exist: ",
+        paste0(testnames[is.na(idx)], collapse =", ")
+      )
+    }
+
+    # Keep only specified files
+    found_testnames <- found_testnames[idx]
+  }
+
+  found_testnames
+}
+
+all_testnames <- function(testDir, suffixes = c("-expected", "-current")) {
   # Create a regex string like "(-expected|-current)$"
   pattern <- paste0(
     "(",
@@ -108,14 +220,14 @@ all_testnames <- function(appDir, suffixes = c("-expected", "-current")) {
     ")$"
   )
 
-  testnames <- dir(file.path(appDir, "tests"), pattern = pattern)
+  testnames <- dir(testDir, pattern = pattern)
   testnames <- sub(pattern, "", testnames)
   unique(testnames)
 }
 
 
-validate_testname <- function(appDir, testname) {
-  valid_testnames <- all_testnames(appDir)
+validate_testname <- function(testDir, testname) {
+  valid_testnames <- all_testnames(testDir)
 
   if (is.null(testname) || !(testname %in% valid_testnames)) {
     stop('"', testname, '" ',

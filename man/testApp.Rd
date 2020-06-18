@@ -4,8 +4,14 @@
 \alias{testApp}
 \title{Run tests for a Shiny application}
 \usage{
-testApp(appDir = ".", testnames = NULL, quiet = FALSE,
-  compareImages = TRUE, interactive = base::interactive())
+testApp(
+  appDir = ".",
+  testnames = NULL,
+  quiet = FALSE,
+  compareImages = TRUE,
+  interactive = base::interactive(),
+  suffix = NULL
+)
 }
 \arguments{
 \item{appDir}{Path to the Shiny application to be tested.}
@@ -25,13 +31,17 @@ platform from the one currently being used to test the application.}
 \item{interactive}{If there are any differences between current results and
 expected results, provide an interactive graphical viewer that shows the
 changes and allows the user to accept or reject the changes.}
+
+\item{suffix}{An optional suffix for the expected results directory. For
+example, if the suffix is \code{"mac"}, the expected directory would be
+\code{mytest-expected-mac}.}
 }
 \description{
 Run tests for a Shiny application
 }
 \seealso{
 \code{\link{snapshotCompare}} and \code{\link{snapshotUpdate}} if
-  you want to compare or update snapshots after testing. In most cases, the
-  user is prompted to do these tasks interactively, but there are also times
-  where it is useful to call these functions from the console.
+you want to compare or update snapshots after testing. In most cases, the
+user is prompted to do these tasks interactively, but there are also times
+where it is useful to call these functions from the console.
 }
