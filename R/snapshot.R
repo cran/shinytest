@@ -1,7 +1,20 @@
+sd_snapshotInit <- function(self, private, path, screenshot) {
+  if (grepl("^/", path)) {
+    abort("Snapshot dir must be a relative path.")
+  }
+
+  # Strip off trailing slash if present
+  path <- sub("/$", "", path)
+
+  private$snapshotCount <- 0
+  private$snapshotDir <- path
+  private$snapshotScreenshot <- screenshot
+}
+
 sd_snapshot <- function(self, private, items, filename, screenshot)
 {
   if (!is.list(items) && !is.null(items))
-    stop("'items' must be NULL or a list.")
+    abort("'items' must be NULL or a list.")
 
   private$snapshotCount <- private$snapshotCount + 1
 
@@ -25,9 +38,11 @@ sd_snapshot <- function(self, private, items, filename, screenshot)
 
   extra_names <- setdiff(names(items), c("input", "output", "export"))
   if (length(extra_names) > 0) {
-    stop("'items' must be a list containing one or more items named",
+    abort(paste0(
+      "'items' must be a list containing one or more items named",
       "'input', 'output' and 'export'. Each of these can be TRUE, FALSE, ",
-      " or a character vector.")
+      " or a character vector."
+    ))
   }
 
   if (is.null(items$input))  items$input  <- FALSE
@@ -37,7 +52,7 @@ sd_snapshot <- function(self, private, items, filename, screenshot)
   # Take snapshot -------------------------------------------------------------
   self$logEvent("Taking snapshot")
   url <- private$getTestSnapshotUrl(items$input, items$output, items$export)
-  req <- httr::GET(url)
+  req <- httr_get(url)
 
   # For first snapshot, create -current snapshot dir.
   if (private$snapshotCount == 1) {
@@ -51,7 +66,7 @@ sd_snapshot <- function(self, private, items, filename, screenshot)
   content <- raw_to_utf8(req$content)
   content <- hash_snapshot_image_data(content)
   content <- jsonlite::prettify(content, indent = 2)
-  writeChar(content, file.path(current_dir, filename), eos = NULL)
+  write_utf8(content, file.path(current_dir, filename))
 
   if (screenshot) {
     # Replace extension with .png
@@ -61,11 +76,6 @@ sd_snapshot <- function(self, private, items, filename, screenshot)
 
   # Invisibly return JSON content as a string
   invisible(raw_to_utf8(req$content))
-}
-
-
-sd_snapshotCompare <- function(self, private, autoremove) {
-  message("app$snapshotCompare() no longer used")
 }
 
 sd_snapshotDownload <- function(self, private, id, filename) {
@@ -80,8 +90,10 @@ sd_snapshotDownload <- function(self, private, id, filename) {
 
   # Find the URL to download from (the href of the <a> tag)
   url <- self$findElement(paste0("#", id))$getAttribute("href")
-
-  req <- httr::GET(url)
+  if (identical(url, "")) {
+    stop("Download from '#", id, "' failed")
+  }
+  req <- httr_get(url)
 
   # For first snapshot, create -current snapshot dir.
   if (private$snapshotCount == 1) {
@@ -94,6 +106,26 @@ sd_snapshotDownload <- function(self, private, id, filename) {
   writeBin(req$content, file.path(current_dir, filename))
 
   invisible(req$content)
+}
+
+sd_getTestSnapshotUrl = function(self, private, input, output, export,
+                                 format) {
+  reqString <- function(group, value) {
+    if (isTRUE(value))
+      paste0(group, "=1")
+    else if (is.character(value))
+      paste0(group, "=", paste(value, collapse = ","))
+    else
+      ""
+  }
+  paste(
+    private$shinyTestSnapshotBaseUrl,
+    reqString("input", input),
+    reqString("output", output),
+    reqString("export", export),
+    paste0("format=", format),
+    sep = "&"
+  )
 }
 
 #' Compare current and expected snapshots
@@ -112,14 +144,15 @@ sd_snapshotDownload <- function(self, private, id, filename) {
 #' @param quiet Should output be suppressed? This is useful for automated
 #'   testing.
 #' @param images Should screenshots and PNG images be compared? It can be useful
-#'   to set this to \code{FALSE} when the expected results were taken on a
+#'   to set this to `FALSE` when the expected results were taken on a
 #'   different platform from the current results.
 #' @param suffix An optional suffix for the expected results directory. For
-#'   example, if the suffix is \code{"mac"}, the expected directory would be
-#'   \code{mytest-expected-mac}.
+#'   example, if the suffix is `"mac"`, the expected directory would be
+#'   `mytest-expected-mac`.
 #'
-#' @seealso \code{\link{testApp}}
+#' @seealso [testApp()]
 #'
+#' @keywords internal
 #' @export
 snapshotCompare <- function(
   appDir,
@@ -127,7 +160,7 @@ snapshotCompare <- function(
   autoremove = TRUE,
   images = TRUE,
   quiet = FALSE,
-  interactive = base::interactive(),
+  interactive = is_interactive(),
   suffix = NULL
 ) {
 
@@ -150,7 +183,7 @@ snapshotCompare <- function(
     relativeAppDir <- getOption("shinytest.app.dir", default = appDir)
 
     if (!all_pass) {
-      message('\nTo view a textual diff, run:\n  viewTestDiff("', relativeAppDir, '", interactive = FALSE)')
+      inform(paste0('\nTo view a textual diff, run:\n  viewTestDiff("', relativeAppDir, '", interactive = FALSE)'))
     }
   }
 
@@ -171,7 +204,7 @@ snapshotCompareSingle <- function(
   autoremove = TRUE,
   quiet = FALSE,
   images = TRUE,
-  interactive = base::interactive(),
+  interactive = is_interactive(),
   suffix = NULL
 ) {
   testDir <- findTestsDir(appDir, quiet = TRUE)
@@ -285,7 +318,7 @@ snapshotCompareSingle <- function(
 
   } else {
     if (!quiet) {
-      message("\n  No existing snapshots at ", basename(expected_dir), "/.",
+      message("\n  No existing snapshot at '", expected_dir, "/'",
               " This is a first run of tests.\n")
     }
 
@@ -340,7 +373,7 @@ snapshotUpdateSingle <- function(
   expected_dir <- paste0(expected_dir, normalize_suffix(suffix))
 
   if (!dir_exists(current_dir)) {
-    stop("Current result directory not found: ", current_dir)
+    abort(paste0("Current result directory not found: ", current_dir))
   }
 
   if (!quiet) {
@@ -467,7 +500,7 @@ remove_image_hashes_and_files <- function(filename) {
   } else if (grepl("\\.json$", filename)) {
     content <- read_utf8(filename)
     content <- remove_image_hashes(content)
-    writeChar(content, filename, eos = NULL)
+    write_utf8(content, filename)
     filename
   }
 

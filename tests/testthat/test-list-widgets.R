@@ -1,6 +1,3 @@
-
-context("list widgets")
-
 test_that("list input & output widgets", {
   app <- ShinyDriver$new(test_path("apps/081-widgets-gallery"))
   widgets <- app$listWidgets()
@@ -29,7 +26,7 @@ test_that("warn for multiple widgets sharing an ID", {
 
   ## Actually apps, with duplicate output widget ids do not load currently
   expect_error(
-    ShinyDriver$new(test_path("apps/id-conflicts-2"), loadTimeout = 1000),
+    ShinyDriver$new(test_path("apps/id-conflicts-2"), loadTimeout = 2000),
     "Shiny app did not load"
   )
 

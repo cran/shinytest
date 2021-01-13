@@ -11,7 +11,7 @@ snapshotCompare(
   autoremove = TRUE,
   images = TRUE,
   quiet = FALSE,
-  interactive = base::interactive(),
+  interactive = is_interactive(),
   suffix = NULL
 )
 
@@ -46,5 +46,6 @@ This compares current and expected snapshots for a test set, and prints any
 differences to the console.
 }
 \seealso{
-\code{\link{testApp}}
+\code{\link[=testApp]{testApp()}}
 }
+\keyword{internal}

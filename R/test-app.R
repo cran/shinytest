@@ -1,23 +1,24 @@
 #' Run tests for a Shiny application
 #'
-#' @param appDir Path to the Shiny application to be tested.
+#' @param appDir Path to directory containing a Shiny app (e.g. `app.R`) or
+#'   single interactive `.Rmd`.
 #' @param testnames Test script(s) to run. The .R extension of the filename is
-#'   optional. For example, \code{"mytest"} or \code{c("mytest", "mytest2.R")}.
-#'   If \code{NULL} (the default), all scripts in the tests/ directory will be
+#'   optional. For example, `"mytest"` or `c("mytest", "mytest2.R")`.
+#'   If `NULL` (the default), all scripts in the tests/ directory will be
 #'   run.
 #' @param quiet Should output be suppressed? This is useful for automated
 #'   testing.
 #' @param compareImages Should screenshots be compared? It can be useful to set
-#'   this to \code{FALSE} when the expected results were taken on a different
+#'   this to `FALSE` when the expected results were taken on a different
 #'   platform from the one currently being used to test the application.
 #' @param interactive If there are any differences between current results and
 #'   expected results, provide an interactive graphical viewer that shows the
 #'   changes and allows the user to accept or reject the changes.
 #' @param suffix An optional suffix for the expected results directory. For
-#'   example, if the suffix is \code{"mac"}, the expected directory would be
-#'   \code{mytest-expected-mac}.
+#'   example, if the suffix is `"mac"`, the expected directory would be
+#'   `mytest-expected-mac`.
 #'
-#' @seealso \code{\link{snapshotCompare}} and \code{\link{snapshotUpdate}} if
+#' @seealso [snapshotCompare()] and [snapshotUpdate()] if
 #'   you want to compare or update snapshots after testing. In most cases, the
 #'   user is prompted to do these tasks interactively, but there are also times
 #'   where it is useful to call these functions from the console.
@@ -28,31 +29,18 @@ testApp <- function(
   testnames = NULL,
   quiet = FALSE,
   compareImages = TRUE,
-  interactive = base::interactive(),
+  interactive = is_interactive(),
   suffix = NULL
 )
 {
   library(shinytest)
 
-  # appDir could be the path to an .Rmd file. If so, make it point to the actual
-  # directory.
-  if (is_rmd(appDir)) {
-    app_filename <- basename(appDir)
-    appDir       <- dirname(appDir)
-    if (length(dir(appDir, pattern = "\\.Rmd$", ignore.case = TRUE)) > 1) {
-      stop("For testing, only one .Rmd file is allowed per directory.")
-    }
-  } else {
-    app_filename <- NULL
-    appDir       <- appDir
-  }
+  path <- app_path(appDir, "appDir")
 
-  testsDir <- findTestsDir(appDir, quiet=FALSE)
+  testsDir <- findTestsDir(path$dir, quiet=FALSE)
   found_testnames <- findTests(testsDir, testnames)
-  found_testnames_no_ext <- sub("\\.[rR]$", "", found_testnames)
-
   if (length(found_testnames) == 0) {
-    stop("No test scripts found in ", testsDir)
+    abort("No test scripts found in ", testsDir)
   }
 
   # Run all the test scripts.
@@ -71,27 +59,24 @@ testApp <- function(
     # in case they're using some of the same resources.
     gc()
 
-    env <- new.env(parent = .GlobalEnv)
     if (!quiet) {
       message(testname, " ", appendLF = FALSE)
     }
+    env <- new.env(parent = .GlobalEnv)
     source(testname, local = env)
   })
 
   gc()
-
   if (!quiet) message("")  # New line
 
   # Compare all results
-  return(
-    snapshotCompare(
-      appDir,
-      testnames = found_testnames_no_ext,
-      quiet = quiet,
-      images = compareImages,
-      interactive = interactive,
-      suffix = suffix
-    )
+  snapshotCompare(
+    path$dir,
+    testnames = sub("\\.[rR]$", "", found_testnames),
+    quiet = quiet,
+    images = compareImages,
+    interactive = interactive,
+    suffix = suffix
   )
 }
 
@@ -126,7 +111,7 @@ findTestsDir <- function(appDir, mustExist=TRUE, quiet=TRUE) {
 
   testsDir <- file.path(appDir, "tests")
   if (!dir_exists(testsDir) && mustExist) {
-    stop("tests/ directory doesn't exist")
+    abort("tests/ directory doesn't exist")
   } else if (!dir_exists(testsDir) && !mustExist) {
     # Use the preferred directory if nothing exists yet.
     return(file.path(testsDir, "shinytest"))
@@ -166,7 +151,7 @@ findTestsDir <- function(appDir, mustExist=TRUE, quiet=TRUE) {
   }
 
   if (!all(is_test)) {
-    stop("Found R files that don't appear to be shinytests in the tests/ directory. shinytests should be placed in tests/shinytest/")
+    abort("Found R files that don't appear to be shinytests in the tests/ directory. shinytests should be placed in tests/shinytest/")
   }
 
   if (!quiet) {
@@ -200,9 +185,7 @@ findTests <- function(testsDir, testnames=NULL) {
     idx <- match(testnames_no_ext, found_testnames_no_ext)
 
     if (any(is.na(idx))) {
-      stop("Test scripts do not exist: ",
-        paste0(testnames[is.na(idx)], collapse =", ")
-      )
+      abort(c("Test scripts do not exist:", testnames[is.na(idx)]))
     }
 
     # Keep only specified files
@@ -230,9 +213,9 @@ validate_testname <- function(testDir, testname) {
   valid_testnames <- all_testnames(testDir)
 
   if (is.null(testname) || !(testname %in% valid_testnames)) {
-    stop('"', testname, '" ',
-      'is not a valid testname for the app. Valid names are: "',
-      paste(valid_testnames, collapse = '", "'), '".'
-    )
+    abort(c(
+      paste0('"', testname, '" is not a valid testname for the app.'),
+      paste0('Valid names are: "', paste(valid_testnames, collapse = '", "'), '".')
+    ))
   }
 }

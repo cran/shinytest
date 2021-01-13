@@ -1,3 +1,38 @@
+shinytest 1.5.0
+===============
+
+* `ShinyDriver$takeSnapshot()` gains ability to take a snapshot of a single
+  element (#260).
+
+* New `Widget$getHtml()` returns the complete HTML of the selected widget 
+  (#347).
+
+* Add new `osName()` function, which returns the name of the operating system.
+  (#368)
+
+* `ShinyDriver$intialize()` gains two new arguments:
+    * `renderArgs`: a list of arguments to `rmarkdown::run()`, making it possible to set parameters for parameterised `runtime: shiny` Rmd documents (#249).
+    * `options`: a list of arguments to `base::options()`, making it possible to set options in the child process which runs the application (#373).
+
+* `ShinyDriver$getAllValues()`, `ShinyDriver$snapshot()`, and
+  `ShinyDriver$snapshotDownload()` give clear errors messages if the Shiny
+  app is no longer running (e.g. because you've trigged a `stopApp()`) (#192).
+
+* `ShinyDriver$snapshotDownload()` gives a clear error message if the 
+  `fileInput()` does not exist (#191)
+
+* New `Widget$click()` method to click buttons (#325).
+
+* New `ShinyDriver$waitForShiny()` that waits until Shiny is done computing
+  on the reactive graph (#327). 
+
+* `testApp()` can now take a path to a directory containing a single 
+  interactive `.Rmd` (#334).
+
+* Fixed [#206](https://github.com/rstudio/shinytest/issues/206): On Windows, non-ASCII characters in JSON snapshots were written using the native encoding, instead of UTF-8. ([#318](https://github.com/rstudio/shinytest/pull/318), [#320](https://github.com/rstudio/shinytest/pull/320))
+
+* Added `registerInputProcessor()`, which allows other packages to control how code is generated when recording input values from input bindings from that package. ([#321])
+
 shinytest 1.4.0
 ===============
 

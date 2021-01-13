@@ -18,13 +18,7 @@ random_open_port <- function(min = 3000, max = 9000, n = 20) {
     }
   }
 
-  stop("Cannot find an available port")
-}
-
-check_external <- function(x) {
-  if (Sys.which(x) == "") {
-    stop("Cannot start '", x, "', make sure it is in the path")
-  }
+  abort("Cannot find an available port")
 }
 
 parse_class <- function(x) {
@@ -47,13 +41,31 @@ package_version <- function(pkg = packageName()) {
   paste0(l, r)
 }
 
-str <- function(x) as.character(x)
-
 is_windows <- function() .Platform$OS.type == "windows"
 
-is_osx     <- function() Sys.info()[['sysname']] == 'Darwin'
+is_mac     <- function() Sys.info()[['sysname']] == 'Darwin'
 
 is_linux   <- function() Sys.info()[['sysname']] == 'Linux'
+
+#' Get the name of the OS
+#'
+#' Returns the name of the current OS. This can be useful for the `suffix` when
+#' running [testApp()].
+#'
+#' @export
+osName <- function() {
+  if (is_windows()) {
+    "win"
+  } else if (is_mac()) {
+    "mac"
+  } else if (is_linux()) {
+    "linux"
+  } else if (.Platform$OS.type == "unix") {
+    "unix"
+  } else {
+    stop("Unknown OS")
+  }
+}
 
 dir_exists <- function(path) utils::file_test('-d', path)
 
@@ -85,7 +97,7 @@ rel_path <- function(path, base = getwd()) {
 parse_url <- function(url) {
   res <- regexpr("^(?<protocol>https?)://(?<host>[^:/]+)(:(?<port>\\d+))?(?<path>/.*)?$", url, perl = TRUE)
 
-  if (res == -1) stop(url, " is not a valid URL.")
+  if (res == -1) abort(paste0(url, " is not a valid URL."))
 
   start  <- attr(res, "capture.start",  exact = TRUE)[1, ]
   length <- attr(res, "capture.length", exact = TRUE)[1, ]
@@ -104,40 +116,62 @@ parse_url <- function(url) {
   )
 }
 
-# If it's a directory, return FALSE. If it's a file ending with .Rmd, return TRUE.
-# For other cases, throw error.
 is_rmd <- function(path) {
   if (utils::file_test('-d', path)) {
     FALSE
   } else if (grepl("\\.Rmd", path, ignore.case = TRUE)) {
     TRUE
   } else {
-    stop("Unknown whether app is a regular Shiny app or .Rmd: ", path)
+    FALSE
   }
 }
 
-# Given a path, return a path that can be passed to ShinyDriver$new()
-# * If it is a path to an Rmd file including filename (like foo/doc.Rmd), return path unchanged.
-# * If it is a dir containing app.R, server.R, return path unchanged.
-# * If it is a dir containing index.Rmd, return the path with index.Rmd at the end.
-# * Otherwise, throw error.
-app_path <- function(path) {
-  if (grepl("\\.Rmd", path, ignore.case = TRUE)) {
-    return(path)
-  }
-  if (dir_exists(path)) {
-    if (any(c("app.r", "server.r") %in% tolower(dir(path)))) {
-      return(path)
-    }
-    if ("index.Rmd" %in% dir(path)) {
-      return(file.path(path, "index.Rmd"))
-    }
-  }
-
-  stop(path, " must be a directory containing app.R, server.R, or index.Rmd; or path to a .Rmd file (including the filename).")
+is_app <- function(path) {
+  tryCatch(
+    {
+      shiny::shinyAppDir(path)
+      TRUE
+    },
+    # shiny::shinyAppDir() throws a classed exception when path isn't a
+    # directory, or it doesn't contain an app.R (or server.R) file
+    # https://github.com/rstudio/shiny/blob/a60406a/R/shinyapp.R#L116-L119
+    invalidShinyAppDir = function(x) FALSE,
+    # If we get some other error, it's probably from sourcing
+    # of the app file(s), so throw that error now
+    error = function(x) abort(conditionMessage(x))
+  )
 }
 
+app_path <- function(path, arg = "path") {
+  # must also check for dir (windows trailing '/')
+  if (!(file.exists(path) || dir.exists(path))) {
+    stop(paste0("'", path, "' doesn't exist"), call. = FALSE)
+  }
 
+  if (is_app(path)) {
+    app <- path
+    dir <- path
+  } else if (is_rmd(path)) {
+    # Fallback for old behaviour
+    if (length(dir(dirname(path), pattern = "\\.[Rr]md$")) > 1) {
+      abort("For testing, only one .Rmd file is allowed per directory.")
+    }
+    app <- path
+    dir <- dirname(path)
+  } else {
+    rmds <- dir(path, pattern = "\\.Rmd$", full.names = TRUE)
+    if (length(rmds) != 1) {
+      abort(paste0(
+        "`", arg, "` doesn't contain 'app.R', 'server.R', or exactly one '.Rmd'"
+      ))
+    } else {
+      app <- rmds
+      dir <- dirname(app)
+    }
+  }
+
+  list(app = app, dir = dir)
+}
 
 raw_to_utf8 <- function(data) {
   res <- rawToChar(data)
@@ -152,6 +186,11 @@ read_raw <- function(file) {
 read_utf8 <- function(file) {
   res <- read_raw(file)
   raw_to_utf8(res)
+}
+
+# write text as UTF-8
+write_utf8 <- function(text, ...) {
+  writeBin(charToRaw(enc2utf8(text)), ...)
 }
 
 normalize_suffix <- function(suffix) {
@@ -200,3 +239,33 @@ png_res_header_data <- as.raw(c(
   0x01,                    # Unit specifier: meters
   0x00, 0x9a, 0x9c, 0x18   # Checksum
 ))
+
+on_ci <- function() {
+ isTRUE(as.logical(Sys.getenv("CI")))
+}
+
+httr_get <- function(url) {
+  pieces <- httr::parse_url(url)
+
+  if (!pingr::is_up(pieces$hostname, pieces$port)) {
+    stop("Shiny app is no longer running")
+  }
+
+  req <- httr::GET(url)
+  status <- httr::status_code(req)
+  if (status == 200) {
+    return(req)
+  }
+
+  cat("Query failed (", status, ")----------------------\n", sep = "")
+  cat(httr::content(req, "text"), "\n")
+  cat("----------------------------------------\n")
+  stop("Unable request data from server")
+}
+
+inform_where <- function(message) {
+  bt <- trace_back(bottom = parent.frame())
+  bt_string <- paste0(format(bt), collapse = "\n")
+
+  inform(paste0(message, "\n", bt_string))
+}
