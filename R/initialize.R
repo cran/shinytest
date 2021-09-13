@@ -45,6 +45,19 @@ sd_initialize <- function(self, private, path, loadTimeout, checkNames,
   self$logEvent("Navigating to Shiny app")
   private$web$go(private$getShinyUrl())
 
+  "!DEBUG wait for navigation to happen"
+  nav_stop_time <- as.numeric(Sys.time()) + loadTimeout
+  while(identical(private$web$getUrl(), "about:blank")) {
+    if (as.numeric(Sys.time()) > nav_stop_time) {
+      abort(paste0(
+        "Failed to navigate to Shiny app in ", loadTimeout, "ms.\n",
+        format(self$getDebugLog())
+      ))
+    }
+
+    Sys.sleep(0.1)
+  }
+
   "!DEBUG inject shiny-tracer.js"
   self$logEvent("Injecting shiny-tracer.js")
   js_file <- system.file("js", "shiny-tracer.js", package = "shinytest")
@@ -116,7 +129,7 @@ sd_startShiny <- function(self, private, path, seed, loadTimeout, shinyOptions, 
           # Prior to R 3.6, RNGkind has 2 args, otherwise it has 3
           do.call(RNGkind, as.list(rng_kind))
           set.seed(seed);
-          shiny:::withPrivateSeed(set.seed(seed + 11))
+          getNamespace("shiny")$withPrivateSeed(set.seed(seed + 11))
         }
 
         options <- as.list(options)

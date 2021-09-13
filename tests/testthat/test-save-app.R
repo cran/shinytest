@@ -1,4 +1,5 @@
 test_that("can run saved app", {
+  sleep_on_ci()
   x <- 10
   ui <- fluidPage(
     textOutput("x")
@@ -14,6 +15,8 @@ test_that("can run saved app", {
 })
 
 test_that("can get ui and server from app", {
+  local_edition(3)
+
   ui <- fluidPage("Hi!")
   server <- function(input, output, session) {
     "Hello there"
@@ -34,4 +37,3 @@ test_that("can extract globals from server", {
   expect_equal(globals$globals, list(x = 10))
   expect_equal(globals$packages, "shiny")
 })
-

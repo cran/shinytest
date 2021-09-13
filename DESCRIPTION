@@ -1,6 +1,6 @@
 Package: shinytest
 Title: Test Shiny Apps
-Version: 1.5.0
+Version: 1.5.1
 Authors@R: 
     c(person(given = "Winston",
              family = "Chang",
@@ -29,11 +29,10 @@ Imports: assertthat, callr (>= 2.0.3), crayon, debugme, digest,
         testthat (>= 1.0.0), utils, webdriver (>= 1.0.6), withr
 Suggests: flexdashboard, globals, rmarkdown
 Encoding: UTF-8
-LazyData: true
 RoxygenNote: 7.1.1
 SystemRequirements: PhantomJS (http://phantomjs.org/)
 NeedsCompilation: no
-Packaged: 2021-01-13 00:14:49 UTC; winston
+Packaged: 2021-09-13 17:14:09 UTC; barret
 Author: Winston Chang [aut, cre],
   Gábor Csárdi [aut],
   Hadley Wickham [aut],
@@ -41,4 +40,4 @@ Author: Winston Chang [aut, cre],
   Mango Solutions [cph, ccp]
 Maintainer: Winston Chang <winston@rstudio.com>
 Repository: CRAN
-Date/Publication: 2021-01-13 06:40:02 UTC
+Date/Publication: 2021-09-13 18:10:01 UTC
