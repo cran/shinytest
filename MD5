@@ -1,7 +1,7 @@
-2deab8d160357c7dd8d154fa92e922c9 *DESCRIPTION
+b2d58802b5107636247747bcfe07a86d *DESCRIPTION
 ddfa93fe5d0827d872d34b7eef574617 *LICENSE
 0754e8c3916925db888f20a2b9509593 *NAMESPACE
-82fab5f3b3ae071f63614c882fc37463 *NEWS.md
+133e7cd922d0296d1a961fa09ad16a54 *NEWS.md
 ad5bed7a073ce9d968fda562164218fc *R/app-get-all-values.R
 03fa7f592565605adcd6799de69ac8b2 *R/assertions.R
 bb05d891e7a796d999f25eefbc238db6 *R/debugging.R
@@ -10,7 +10,7 @@ b0d4ada131410d6bc184be36ae3ad143 *R/expect.R
 b05ad7714748cdae67171ba923250230 *R/files-compare.R
 09233f1aa78f1cc10bccbf1a49099c7c *R/initialize.R
 3507a10fac6a993b6d6891d8d36e8b4d *R/migrate-shinytest-dir.R
-6ee8d905079998a5a706f969cc340bd8 *R/on-load.R
+0f2f28a6103e4b9ddf0d0c93aad7e182 *R/on-load.R
 5b42499d2e798aeb298f08b30664fd18 *R/phantom.R
 ec6c381236e56cf153240fa739570b8b *R/recorder.R
 bb25c88b1818bffb61ffe24e70103426 *R/save-app.R

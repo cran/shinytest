@@ -1,3 +1,7 @@
+# shinytest 1.5.3
+
+* The `tryInvokeRestart()` function (used in shinytest 1.5.2) was added in R 4.0. This version replaces it with code that will work in older versions of R.
+
 # shinytest 1.5.2
 
 * Messages emitted at load time are now converted to `packageStartupMessage`s so that they can be suppressed with `suppressPackageStartupMessages()`.
