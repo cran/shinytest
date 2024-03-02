@@ -1,7 +1,7 @@
-b2d58802b5107636247747bcfe07a86d *DESCRIPTION
+694e43488c89139e59cf5369c74a8723 *DESCRIPTION
 ddfa93fe5d0827d872d34b7eef574617 *LICENSE
 0754e8c3916925db888f20a2b9509593 *NAMESPACE
-133e7cd922d0296d1a961fa09ad16a54 *NEWS.md
+0c67b4338596cefe59a1b3d77d3f4860 *NEWS.md
 ad5bed7a073ce9d968fda562164218fc *R/app-get-all-values.R
 03fa7f592565605adcd6799de69ac8b2 *R/assertions.R
 bb05d891e7a796d999f25eefbc238db6 *R/debugging.R
@@ -24,7 +24,7 @@ b022f9237c9eab4a8a1cbf054370dd18 *R/set-inputs.R
 2c201c0d36147d0961a637ca6b4653a6 *R/utils.R
 8fe6ff4f90eb340982cff2e4a7c8e6a9 *R/view-diff.R
 a5569950cf72034698c0b4a0f6f78640 *R/widget.R
-4bf71427e7bccb284d2a9fae63102b81 *README.md
+5568cdb43c7acef5a93808e0e50eb4df *README.md
 964b82e905d127d2068da71fe253e10e *inst/app-template.R
 a6d1bc0785994565386c556733fa0bdc *inst/diffviewerapp/app.R
 f1391f8b029b9f249588eea85089fb01 *inst/diffviewerapp/www/diffviewerapp.css

@@ -1,22 +1,22 @@
 Package: shinytest
 Title: Test Shiny Apps
-Version: 1.5.3
+Version: 1.5.4
 Authors@R: 
     c(person(given = "Winston",
              family = "Chang",
              role = c("aut", "cre"),
-             email = "winston@rstudio.com"),
+             email = "winston@posit.co"),
       person(given = "Gábor",
              family = "Csárdi",
              role = "aut",
-             email = "gabor@rstudio.com"),
+             email = "gabor@posit.co"),
       person(given = "Hadley",
              family = "Wickham",
              role = "aut",
-             email = "hadley@rstudio.com"),
-      person(given = "RStudio",
+             email = "hadley@posit.co"),
+      person(given = "Posit Software, PBC",
              role = c("cph", "fnd")),
-      person(given = "Mango Solutions",
+      person(given = "Ascent Digital Services",
              role = c("cph", "ccp")))
 Description: For automated testing of Shiny applications, using
     a headless browser, driven through 'WebDriver'.
@@ -32,12 +32,12 @@ Encoding: UTF-8
 RoxygenNote: 7.1.2
 SystemRequirements: PhantomJS (http://phantomjs.org/)
 NeedsCompilation: no
-Packaged: 2023-03-23 22:32:51 UTC; winston
+Packaged: 2024-03-02 17:41:24 UTC; winston
 Author: Winston Chang [aut, cre],
   Gábor Csárdi [aut],
   Hadley Wickham [aut],
-  RStudio [cph, fnd],
-  Mango Solutions [cph, ccp]
-Maintainer: Winston Chang <winston@rstudio.com>
+  Posit Software, PBC [cph, fnd],
+  Ascent Digital Services [cph, ccp]
+Maintainer: Winston Chang <winston@posit.co>
 Repository: CRAN
-Date/Publication: 2023-03-25 00:00:02 UTC
+Date/Publication: 2024-03-02 21:30:02 UTC
