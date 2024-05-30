@@ -1,6 +1,6 @@
 Package: shinytest
 Title: Test Shiny Apps
-Version: 1.5.4
+Version: 1.6.1
 Authors@R: 
     c(person(given = "Winston",
              family = "Chang",
@@ -18,8 +18,7 @@ Authors@R:
              role = c("cph", "fnd")),
       person(given = "Ascent Digital Services",
              role = c("cph", "ccp")))
-Description: For automated testing of Shiny applications, using
-    a headless browser, driven through 'WebDriver'.
+Description: Please see the 'shinytest' to 'shinytest2' migration guide at <https://rstudio.github.io/shinytest2/articles/z-migration.html>.
 License: MIT + file LICENSE
 URL: https://github.com/rstudio/shinytest
 BugReports: https://github.com/rstudio/shinytest/issues
@@ -29,10 +28,10 @@ Imports: assertthat, callr (>= 2.0.3), crayon, debugme, digest,
         testthat (>= 1.0.0), utils, webdriver (>= 1.0.6), withr
 Suggests: flexdashboard, globals, rmarkdown
 Encoding: UTF-8
-RoxygenNote: 7.1.2
+RoxygenNote: 7.3.1
 SystemRequirements: PhantomJS (http://phantomjs.org/)
 NeedsCompilation: no
-Packaged: 2024-03-02 17:41:24 UTC; winston
+Packaged: 2024-05-30 18:58:12 UTC; winston
 Author: Winston Chang [aut, cre],
   Gábor Csárdi [aut],
   Hadley Wickham [aut],
@@ -40,4 +39,4 @@ Author: Winston Chang [aut, cre],
   Ascent Digital Services [cph, ccp]
 Maintainer: Winston Chang <winston@posit.co>
 Repository: CRAN
-Date/Publication: 2024-03-02 21:30:02 UTC
+Date/Publication: 2024-05-30 19:10:02 UTC

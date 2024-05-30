@@ -11,6 +11,13 @@
   })
 }
 
+.onAttach <- function(libname, pkgname) {
+  packageStartupMessage(
+    "IMPORTANT! shinytest is deprecated and may not work with shiny>1.8.1.1.\n",
+    "Please switch to shinytest2.\n",
+    "See https://rstudio.github.io/shinytest2/articles/z-migration.html"
+  )
+}
 
 # Evaluate an expression, and if it emits any messsages, convert them to
 # packageStartupMessage.
